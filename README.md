@@ -1,4 +1,4 @@
-# KNOMI
+# KNOMI for ESP32-C3
 
 This is a fork from the BTT KNOMI firmware. Knomi uses a ESP32 WROOM controller. 
 To be able to use other displays this version is ported to ESP32-C3. 
