@@ -1,13 +1,13 @@
-#include <lvgl_gui.h>
+#include "lvgl_gui.h"
 #include <Arduino.h>
 #include <lvgl.h>
 #include <WiFi.h>
-#include <TFT_eSPI.h> // Hardware-specific library
-#include <WiFiUser.h>
-#include <lvgl_logo_btt.h>
-#include <lvgl_gif.h>
-#include <test.h>
-
+// Hardware-specific library
+#include <LovyanGFX.h>
+#include "WiFiUser.h"
+#include "lvgl_logo_btt.h"
+#include "lvgl_gif.h"
+#include "test.h"
 
 LV_IMG_DECLARE(red_test);
 LV_IMG_DECLARE(green_test);
@@ -86,5 +86,3 @@ void update_blue_back_display()
   img_blue_test = lv_img_create(lv_scr_act());
   lv_img_set_src(img_blue_test, &blue_test);lv_obj_align(img_blue_test,LV_ALIGN_CENTER,0,0);
 }
-
-

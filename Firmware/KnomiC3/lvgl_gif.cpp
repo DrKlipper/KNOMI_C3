@@ -1,9 +1,11 @@
-#include <lvgl_gif.h>
+#include "lvgl_gif.h"
 #include <Arduino.h>
 #include <lvgl.h>
 #include <WiFi.h>
-#include <TFT_eSPI.h> // Hardware-specific library
-#include <WiFiUser.h>
+// Hardware-specific library
+#include <LovyanGFX.h>
+#include "WiFiUser.h"
+
 
 LV_IMG_DECLARE(AP_Config);
 LV_IMG_DECLARE(Home);
@@ -299,5 +301,3 @@ void update_gif_voron_display()
   lv_gif_set_src(gif_voron, &Voron);
   lv_obj_align(gif_voron,LV_ALIGN_CENTER,0,0);
 }
-
-

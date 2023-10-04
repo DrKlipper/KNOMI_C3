@@ -1,12 +1,13 @@
-#include <lvgl_gui.h>
+#include "lvgl_gui.h"
 #include <Arduino.h>
 #include <lvgl.h>
 #include <WiFi.h>
-#include <TFT_eSPI.h> // Hardware-specific library
-#include <WiFiUser.h>
-#include <lvgl_logo_btt.h>
-#include <lvgl_gif.h>
-#include <test.h>
+// #include <TFT_eSPI.h> // Hardware-specific library
+#include <LovyanGFX.h>
+#include "WiFiUser.h"
+#include "lvgl_logo_btt.h"
+#include "lvgl_gif.h"
+#include "test.h"
 
 //显示刷新定时器
 lv_timer_t * update_timer=NULL;
@@ -197,4 +198,3 @@ void Open_display_init(){
     }
 
 } 
-
