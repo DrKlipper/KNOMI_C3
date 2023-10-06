@@ -55,7 +55,7 @@ void InitKeyInterface()
 	int	i;
 	uint8_t State[TOTAL_KEY];
 
-	pinMode(RESET_PIN, INPUT);     //按键输入模式(默认高电平输入,按下时接到低电平)
+	pinMode(RESET_PIN, INPUT);     // Key input mode (default high level input, low level when pressed)
 	delay(200);
 	State[0] = (uint8_t)digitalRead(RESET_PIN);
 	
@@ -119,7 +119,7 @@ int KeyMessageProc(uint8_t KeyMessage)
 				if(test_key_cnt>=3){   //短按3下，进入测试模式
 				    test_key_cnt = 0;
 					test_mode_flag = 1;
-					Serial.println("\n进入测试模式");
+					Serial.println("\nEntering Test Mode");
 				}				
 			break;
 		
@@ -137,7 +137,7 @@ int KeyMessageLongProc(uint8_t KeyMessage)
 	switch(KeyMessage)
 	{
 	    case KEY_1_DW:
-                Serial.println("\n按键已长按4秒,正在清空网络连保存接信息.");
+                Serial.println("\nThe button has been pressed for 4 seconds and is clearing the network connection.");
                 deletewificonfig(); //删除EEROM保存的wifi信息
                 restoreWiFi();     //删除保存的wifi信息
                 ESP.restart();     //重启复位esp32	

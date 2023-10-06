@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <lvgl.h>
 #include <WiFi.h>
-// #include <TFT_eSPI.h> // Hardware-specific library
+// Hardware-specific library
 #include <LovyanGFX.h>
 #include "WiFiUser.h"
 #include "lvgl_logo_btt.h"
@@ -180,8 +180,12 @@ void open_task_conv(lv_timer_t * timer){
     }
 }
 
-void Open_display_init(){
+void Test(){
+	//Serial.println("");
+	//init_img_open_logo_display();
+}
 
+void Open_display_init(){
     if(test_mode_flag == 1){
 
     }else if(wifi_ap_config_flg == 1){
@@ -190,11 +194,8 @@ void Open_display_init(){
         exist_object_screen_flg = 20;
         screen_begin_dis_flg = 1;
     }else{
-
-        init_img_open_logo_display();
-
-        timer_open_init=lv_timer_create(open_task_conv, 100, NULL);
-        lv_timer_set_repeat_count(timer_open_init,1);
+    	init_img_open_logo_display();
+		timer_open_init=lv_timer_create(open_task_conv, 100, NULL);
+  		lv_timer_set_repeat_count(timer_open_init,1);
     }
-
 } 

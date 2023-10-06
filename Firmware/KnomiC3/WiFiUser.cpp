@@ -21,15 +21,15 @@ String wifi_ssid = "";                     //暂时存储wifi账号密码
 String wifi_pass = "";                     //暂时存储wifi账号密码
 String klipper_ip = "";                     //暂时存储KlipperIP
 
-int connectTimeOut_s = 15;   //WiFi连接超时时间，单位秒
-const int LED = 2;                         //设置LED引脚
+int connectTimeOut_s = 15;                  //WiFi连接超时时间，单位秒
+const int LED = 2;                          //设置LED引脚
  
-DNSServer dnsServer;                       //创建dnsServer实例
-WebServer server(webPort);                 //开启web服务, 创建TCP SERVER,参数: 端口号,最大连接数
+DNSServer dnsServer;                        //创建dnsServer实例
+WebServer server(webPort);                  //开启web服务, 创建TCP SERVER,参数: 端口号,最大连接数
 
 
-//EEPROM参数存储地址位
-int wifi_addr = 1; //被写入数据的EEPROM地址编号  wifi-ssid-psw klipper
+//EEPROM parameter storage address bits
+int wifi_addr = 1; //EEPROM address number to which data is written  wifi-ssid-psw klipper
 
 
 
@@ -65,7 +65,7 @@ void handleConfigWifi()               //返回http状态
 {
   if (server.hasArg("ssid"))          //判断是否有账号参数
   {
-    Serial.print("got ssid:");
+    Serial.print("WEB > Handle SSID : ");
     wifi_ssid = server.arg("ssid");   //获取html表单输入框name名为"ssid"的内容
 
     strcpy(wificonf.stassid,wifi_ssid.c_str());//名称复制
@@ -73,14 +73,14 @@ void handleConfigWifi()               //返回http状态
   } 
   else                                //没有参数
   { 
-    Serial.println("error, not found ssid");
+    Serial.println("WEB > Error, not found ssid");
     server.send(200, "text/html", "<meta charset='UTF-8'>error, not found ssid"); //返回错误页面
     return;
   }
   //密码与账号同理
   if (server.hasArg("pass")) 
   {
-    Serial.print("got password:");
+    Serial.print("WEB > Handle Pass : ");
     wifi_pass = server.arg("pass");  //获取html表单输入框name名为"pwd"的内容
     
     strcpy(wificonf.stapsw,wifi_pass.c_str());//名称复制
@@ -88,14 +88,14 @@ void handleConfigWifi()               //返回http状态
   } 
   else 
   {
-    Serial.println("error, not found password");
+    Serial.println("WEB > Error, not found password");
     server.send(200, "text/html", "<meta charset='UTF-8'>error, not found password");
     return;
   }
   //klipper ip
   if (server.hasArg("klipper")) 
   {
-    Serial.print("got KlipperIP:");
+    Serial.print("WEB > Handle K.IP : ");
     klipper_ip = server.arg("klipper");  //获取html表单输入框name名为"KlipperIP"的内容
 
     strcpy(wificonf.klipperip,klipper_ip.c_str());//名称复制  
@@ -106,27 +106,35 @@ void handleConfigWifi()               //返回http状态
   } 
   else 
   {
-    Serial.println("error, not found klipper ip");
+    Serial.println("WEB > Error, not found klipper ip");
     server.send(200, "text/html", "<meta charset='UTF-8'>error, not found klipper ip");
     return;
   }
   delay(200);
 
   // server.send(200, "text/html", "<meta charset='UTF-8'>SSID：" + wifi_ssid + "<br />password:" + wifi_pass + "<br />Trying to connect Trying to connect, please manually close this page."); //返回保存成功页面
-  server.send(200, "text/html",ROOT_HTML_OK); //返回保存成功页面
+  Serial.println("WEB > Send OK Page ...");
+  server.send(200, "text/html",ROOT_HTML_OK); // Return to Save Success Page
   delay(2000);
-  WiFi.softAPdisconnect(true);     //参数设置为true，设备将直接关闭接入点模式，即关闭设备所建立的WiFi网络。
-  server.close();                  //关闭web服务
-  WiFi.softAPdisconnect();         //在不输入参数的情况下调用该函数,将关闭接入点模式,并将当前配置的AP热点网络名和密码设置为空值.
+  Serial.println("WEB > Stop Webserver ...");
+  server.close();                             // Shutting down web services
+  delay(2000);
+  Serial.println("WEB > Soft AP Disconnect 1");
+  WiFi.softAPdisconnect(true);                // parameter is set to true, the device will directly turn off the access point mode, 
+                                              // i.e. turn off the WiFi network established by the device.
+  delay(2000);
+  Serial.println("WEB > Soft AP Disconnect 2");
+  WiFi.softAPdisconnect();                    // Calling this function without parameters will disable access point mode and set the currently 
+                                              // configured AP hotspot network name and password to null values.
   Serial.println("WiFi Connect SSID:" + wifi_ssid + "  PASS:" + wifi_pass);
  
   if (WiFi.status() != WL_CONNECTED)    //wifi没有连接成功
   {
-    Serial.println("开始调用连接函数connectToWiFi()..");
+    Serial.println("Start calling the connect function connectToWiFi()...");
     connectToWiFi(connectTimeOut_s);
   } 
   else {
-    Serial.println("提交的配置信息自动连接成功..");
+    Serial.println("The submitted configuration information automatically connects successfully...");
   }
 }
  
@@ -237,13 +245,13 @@ bool scanWiFi() {
  */
 void connectToWiFi(int timeOut_s) {
   WiFi.hostname(HOST_NAME);             //设置设备名
-  Serial.println("进入connectToWiFi()函数");
+  Serial.println("WIFI > Go to the connectToWiFi function");
   WiFi.mode(WIFI_STA);                        //设置为STA模式并连接WIFI
   WiFi.setAutoConnect(true);                  //设置自动连接    
   
   if (wifi_ssid != "")                        //wifi_ssid不为空，意味着从网页读取到wifi
   {
-    Serial.println("用web配置信息连接.");
+    Serial.println("WIFI > Connect with web configuration information.");
     WiFi.begin(wifi_ssid.c_str(), wifi_pass.c_str()); //c_str(),获取该字符串的指针
     wifi_ssid = "";
     wifi_pass = "";
@@ -251,7 +259,7 @@ void connectToWiFi(int timeOut_s) {
   else                                        //未从网页读取到wifi
   {
     readwificonfig();
-    Serial.println("用EEROM保存的信息连接.");
+    Serial.println("WIFI > Connection with information saved in EEROM.");
     WiFi.begin(wificonf.stassid,wificonf.stapsw); //begin()不传入参数，默认连接上一次连接成功的wifi
   }
  
@@ -267,7 +275,7 @@ void connectToWiFi(int timeOut_s) {
     { 
       // digitalWrite(LED, LOW);
       Serial.println("");                     //主要目的是为了换行符
-      Serial.println("WIFI autoconnect fail, start AP for webconfig now...");
+      Serial.println("WIFI > autoconnect fail, start AP for webconfig now...");
       wifiConfig();                           //开始配网功能
 
       wifi_connect_fail = 1;
@@ -285,21 +293,22 @@ void connectToWiFi(int timeOut_s) {
   {
     savewificonfig();
 
-    Serial.println("WIFI connect Success");
-    Serial.printf("SSID:%s", WiFi.SSID().c_str());
-    Serial.printf(", PSW:%s\r\n", WiFi.psk().c_str());
-    Serial.print("LocalIP:");
-    Serial.print(WiFi.localIP());
-    Serial.print(" ,GateIP:");
+    Serial.println();
+    Serial.println("WIFI > Connect Success");
+    Serial.printf("WIFI > SSID      : %s\r\n", WiFi.SSID().c_str());
+    Serial.printf("WIFI > PSW       : %s\r\n", WiFi.psk().c_str());
+    Serial.print ("WIFI > LocalIP   : ");
+    Serial.println(WiFi.localIP());
+    Serial.print ("WIFI > GateIP    : ");
     Serial.println(WiFi.gatewayIP());
 
-    Serial.print("KlipperIP:");
+    Serial.print("WIFI > KlipperIP : ");
     String str(wificonf.klipperip);
     klipper_ip = wificonf.klipperip;
     Serial.println(klipper_ip);
 
-    Serial.print("WIFI status is:");
-    Serial.print(WiFi.status());
+    Serial.print("WIFI > Status    : ");
+    Serial.println(WiFi.status());
 
     // digitalWrite(LED, HIGH);
     server.stop();                            //停止开发板所建立的网络服务器。
@@ -336,7 +345,7 @@ void wifiConfig_test()
 void restoreWiFi() {
   delay(500);
   esp_wifi_restore();  //删除保存的wifi信息
-  Serial.println("连接信息已清空,准备重启设备..");
+  Serial.println("WIFI > Connection information cleared, ready to reboot device...");
   delay(10);
   // blinkLED(LED, 5, 500); //LED闪烁5次         //关于LED，不需要可删除 
   // digitalWrite(LED, LOW);                    //关于LED，不需要可删除
@@ -373,18 +382,16 @@ void deletewificonfig()
 //从eeprom读取WiFi信息ssid，psw
 void readwificonfig()
 {
+  Serial.println("EEPROM > Read Data ...");
   uint8_t *p = (uint8_t*)(&wificonf);
   for (int i = 0; i < sizeof(wificonf); i++)
   {
     *(p + i) = EEPROM.read(i + wifi_addr);
   }
-  // EEPROM.commit();
-  // Serial.printf("Read WiFi Config.....\r\n");
-  // Serial.printf("SSID:%s\r\n",wificonf.stassid);
-  // Serial.printf("PSW:%s\r\n",wificonf.stapsw);
-  // Serial.printf("KlipperIP:%s\r\n",wificonf.klipperip);
-  // Serial.printf("Connecting.....\r\n");
-
+  
+  Serial.printf("EEPROM > SSID      : %s\r\n",wificonf.stassid);
+  Serial.printf("EEPROM > PSW       : %s\r\n",wificonf.stapsw);
+  Serial.printf("EEPROM > KlipperIP : %s\r\n",wificonf.klipperip);
 }
 
 /*
@@ -398,10 +405,10 @@ void checkConnect(bool reConnect)
     //   digitalWrite(LED, LOW);
     if (reConnect == true && WiFi.getMode() != WIFI_AP && WiFi.getMode() != WIFI_AP_STA ) 
     {
-      Serial.println("WIFI未连接.");
-      Serial.println("WiFi Mode:");
+      Serial.println("WIFI > Not connected.");
+      Serial.print("WIFI > Mode : ");
       Serial.println(WiFi.getMode());
-      Serial.println("正在连接WiFi...");
+      Serial.println("WIFI > Try Connecting ...");
       connectToWiFi(connectTimeOut_s);          //连接wifi函数 
     }
   } 

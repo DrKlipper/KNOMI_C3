@@ -49,6 +49,7 @@ uint32_t keyscan_nexttime=0;
 
 uint32_t netcheck_nowtime=0;
 uint32_t netcheck_nexttime=0;
+uint32_t sysInfo=0;
 
 uint32_t httprequest_nowtime=0;
 uint32_t httprequest_nexttime=0;
@@ -108,22 +109,22 @@ public:
       cfg.pin_rst = -1;  // RSTが接続されているピン番号  (-1 = disable)
       cfg.pin_busy = -1; // BUSYが接続されているピン番号 (-1 = disable)
 
-      // ※ 以下の設定値はパネル毎に一般的な初期値が設定さ BUSYが接続されているピン番号 (-1 = disable)れていますので、不明な項目はコメントアウトして試してみてください。
+      // The following settings are the general default values for each panel and the pin number to which BUSY is connected (-1 = disable).
 
-      cfg.memory_width = 240;   // ドライバICがサポートしている最大の幅
-      cfg.memory_height = 240;  // ドライバICがサポートしている最大の高さ
-      cfg.panel_width = 240;    // 実際に表示可能な幅
-      cfg.panel_height = 240;   // 実際に表示可能な高さ
-      cfg.offset_x = 0;         // パネルのX方向オフセット量
-      cfg.offset_y = 0;         // パネルのY方向オフセット量
-      cfg.offset_rotation = 0;  // 值在旋转方向的偏移0~7（4~7是倒置的） 
-      cfg.dummy_read_pixel = 8; // 在读取像素之前读取的虚拟位数
-      cfg.dummy_read_bits = 1;  // 读取像素以外的数据之前的虚拟读取位数
-      cfg.readable = false;     // 如果可以读取数据，则设置为 true
-      cfg.invert = true;        // 如果面板的明暗反转，则设置为 true
-      cfg.rgb_order = false;    // 如果面板的红色和蓝色被交换，则设置为 true
-      cfg.dlen_16bit = false;   // 对于以 16 位单位发送数据长度的面板，设置为 true
-      cfg.bus_shared = false;   // 如果总线与 SD 卡共享，则设置为 true（使用 drawJpgFile 等执行总线控制）
+      cfg.memory_width = 240;   // Maximum width supported by driver IC
+      cfg.memory_height = 240;  // Maximum height supported by driver IC
+      cfg.panel_width = 240;    // Actual displayable width
+      cfg.panel_height = 240;   // Actual displayable height
+      cfg.offset_x = 0;         // Amount of panel offset in X direction
+      cfg.offset_y = 0;         // Amount of offset in Y direction of panel
+      cfg.offset_rotation = 0;  // Value offset 0 to 7 in the direction of rotation (4 to 7 are inverted) 
+      cfg.dummy_read_pixel = 8; // The number of virtual bits read before reading pixels
+      cfg.dummy_read_bits = 1;  // Number of virtual read bits before reading data other than pixels
+      cfg.readable = false;     // Set to true if you can read the data
+      cfg.invert = true;        // Set to true if the panel's light/darkness is inverted
+      cfg.rgb_order = true;     // Set to true if the red and blue colors of the panel are exchanged
+      cfg.dlen_16bit = false;   // Set to true for panels that send data length in 16-bit units
+      cfg.bus_shared = false;   // Set to true if the bus is shared with the SD card (perform bus control using drawJpgFile, etc.)
 
       _panel_instance.config(cfg);
     }
@@ -799,15 +800,17 @@ void lv_display_led_Init()
 
 void lv_display_Init()
 {
-    tft.init();         //初始化
-    tft.setRotation(0); //屏幕旋转方向（横向）
+    delay(100);
+    tft.init();               // Initialization
+    tft.setRotation(0);     //Screen rotation direction (landscape)
     lv_init();
     lv_disp_draw_buf_init(&draw_buf, buf, NULL, TFT_WIDTH*10);
 
-    /*Initialize the display*/
+    //Initialize the display
     static lv_disp_drv_t disp_drv;
     lv_disp_drv_init(&disp_drv);
-    /*Change the following line to your display resolution*/
+
+    //Change the following line to your display resolution
     disp_drv.hor_res = TFT_WIDTH;
     disp_drv.ver_res = TFT_HEIGHT;
     disp_drv.flush_cb = my_disp_flush;
@@ -821,7 +824,7 @@ void timer1_cb()
     KeyScan();
 }
 
-void timer2_cb() //短按清零计时
+void timer2_cb() // Short press to clear the timer
 {
     test_key_timer_cnt++;
     if(test_key_timer_cnt>10){
@@ -977,8 +980,28 @@ void Display_Object_Init()
 void setup()
 {
     Serial.begin(115200);           //波特率
-    EEPROM.begin(1024);             //分配flash空间存储配网信息
+    // Erstmal etwas warten um ggf. den seriellen Port überhaupt erwischen zu können ... 
+    delay(5000);
 
+    Serial.println(" ____  __.                     .__  _________ ________     ");    
+    Serial.println("|    |/ _| ____   ____   _____ |__| \\_   ___ \\\\_____  \\    ");     
+    Serial.println("|      <  /    \\ /  _ \\ /     \\|  | /    \\  \\/  _(__  <    ");     
+    Serial.println("|    |  \\|   |  (  <_> )  Y Y  \\  | \\     \\____/       \\   ");     
+    Serial.println("|____|__ \\___|  /\\____/|__|_|  /__|  \\______  /______  /   ");     
+    Serial.println("        \\/    \\/             \\/             \\/       \\/    ");     
+    Serial.println("________            ____  __.__  .__                       ");     
+    Serial.println("\\______ \\_______   |    |/ _|  | |__|_____ ______   ___________  ");
+    Serial.println(" |    |  \\_  __ \\  |      < |  | |  \\____ \\\\____ \\_/ __ \\_  __ \\ ");
+    Serial.println(" |____|   \\  | \\/  |    |  \\|  |_|  |  |_> >  |_> >  ___/|  | \\/ ");
+    Serial.println("/_______  /__| /\\  |____|__ \\____/__|   __/|   __/ \\___  >__|    "); 
+    Serial.println("        \\/     \\/          \\/       |__|   |__|        \\/        ");
+
+    // 1024 hat Probleme gemacht ? 
+    if (!EEPROM.begin(1000)) {
+      Serial.println("Failed to initialise EEPROM");
+    }
+    //deletewificonfig();
+    
     delay(100);
     readwificonfig(); //将wifi账号读出，判断是否进入配网界面
 
@@ -986,16 +1009,25 @@ void setup()
         wifi_ap_config_flg = 1;
     }
 
-    Serial.printf("SSID:%s\r\n",wificonf.stassid);
+    // Serial.printf("SSID:%s\r\n",wificonf.stassid);
+    
+    Serial.println("Init Key interface");
+    InitKeyInterface();             // Keypad Interface Initialization
+    
+    Serial.println("Init lv Display");
+    lv_display_Init();              // Display initialization
 
-    InitKeyInterface();             //按键接口初始化
-    lv_display_Init();              //显示初始化
+    Serial.println("Init Display Object");
+    Display_Object_Init();          // Initialize all display objects once
 
-    Display_Object_Init();         //所有显示对象初始化一遍
-
+    //Serial.println("Init Open Display");
     //Open_display_init();
-
-    lv_display_led_Init();         //晚一点开背光
+    
+    // Don´t show SplashScreen
+    screen_begin_dis_flg = 1;
+    
+    Serial.println("Init LV Display LED");
+    lv_display_led_Init();          // Backlighting later.  
 
     timer1.attach(0.001, timer1_cb);  //定时0.001s，即1ms，回调函数为timer1_cb，并启动定时器 
     timer2.attach(0.1, timer2_cb); 
@@ -1003,7 +1035,6 @@ void setup()
     if(wifi_ap_config_flg == 1){
       wifiConfig();                           //开始配网功能
     }
-
 }     
 
 void loop() 
@@ -1011,7 +1042,7 @@ void loop()
   // lv_tick_inc(1);/* le the GUI do its work */ 
   lv_task_handler();  
   
-  //----------------测试模式，搜索在线网络------------------//
+  //----------------Test mode, search for online networks------------------//
   if(test_mode_flag==1){
 
     screen_begin_dis_flg = 0;
@@ -1041,11 +1072,11 @@ void loop()
 
   if((screen_begin_dis_flg==1)&&(test_mode_flag==0))
   {
-    //-------------HTTP请求-----------------------//
+    //-------------HTTP request-----------------------//
     httprequest_nowtime = millis();
     if (httprequest_nowtime > httprequest_nexttime) {
 
-      if ((WiFi.status() == WL_CONNECTED) && (KeyDownFlag != KEY_DWON) && (start_http_request_flg == 1)) {    //wifi已经连接成功，发送http请求获取数据
+      if ((WiFi.status() == WL_CONNECTED) && (KeyDownFlag != KEY_DWON) && (start_http_request_flg == 1)) {    // wifi has been connected successfully, send http request to get data
 
           HTTPClient http; 
           
@@ -1071,15 +1102,19 @@ void loop()
   
           int httpCode = http.GET();                                        //Make the request
       
-          if (httpCode > 0) { //Check for the returning code
-
+          if (httpCode == 200) { // Check for the returning code  // Fehler > 0
+              Serial.println("HTTP Decode ...");
+              Serial.print  ("HTTP > Code    : ");
+              Serial.println(httpCode);
               screen_no_klipper_dis_flg = 0;
 
               String payload = http.getString();
+              Serial.println("HTTP > Payload :");
+              Serial.println(payload);
               DynamicJsonDocument doc(payload.length()*2);
               deserializeJson(doc, payload);
 
-              if(httpswitch==1){  //喷头热床温度显示
+              if(httpswitch==1){  // Nozzle hot bed temperature display
 
                   String nameStr1 = doc["temperature"]["bed"]["actual"].as<String>();
                   String nameStr2 = doc["temperature"]["bed"]["target"].as<String>();
@@ -1093,11 +1128,15 @@ void loop()
                   tooltemp_actual = (uint16_t)((doc["temperature"]["tool0"]["actual"].as<double>())*100);
                   tooltemp_target = (uint16_t)((doc["temperature"]["tool0"]["target"].as<double>())*100);
 
-
-                  Serial.println(nameStr1);
-                  Serial.println(nameStr2);
-                  Serial.println(nameStr3);
-                  Serial.println(nameStr4);
+                /*  if (nameStr1 != NULL and nameStr1 != 0) { 
+                    Serial.println("Nonsense ... ");
+                    
+                    Serial.println(nameStr1);
+                    Serial.println(nameStr2);
+                    Serial.println(nameStr3);
+                    Serial.println(nameStr4);
+                  }
+                 */
 
                   text_ext_actual_temp = nameStr3+"°C";
                   text_ext_target_temp = nameStr4+"°C";
@@ -1134,7 +1173,7 @@ void loop()
                   last_tooltemp_target = tooltemp_target;
 
                   httpswitch = 2;
-              }else if(httpswitch == 2){   //打印进度
+              }else if(httpswitch == 2){   // Printing Progress
 
                   double nameStr7= (doc["result"]["status"]["display_status"]["progress"].as<double>())*1000;
                   uint16_t datas = (uint16_t)(nameStr7);
@@ -1155,28 +1194,28 @@ void loop()
                   Serial.println(nameStrpriting);
                   
                   httpswitch = 3;
-              }else if(httpswitch == 3){   //home状态
+              }else if(httpswitch == 3){   // home state
 
                   String nameStr8 = doc["result"]["status"]["gcode_macro G28"]["homing"].as<String>();
                   Serial.println(nameStr8);
 
                   if(nameStr8 == "true"){
                       homing_status = 1; 
-                      display_step = 12;  //更快进入显示 
+                      display_step = 12;  // Faster access to the display 
                       timer_contne = 0;         
                   }else{
                       homing_status = 0;  
                   }
 
                   httpswitch = 4;
-              }else if(httpswitch == 4){   //levelling状态
+              }else if(httpswitch == 4){   // levelling status
 
                   String nameStr9 = doc["result"]["status"]["gcode_macro BED_MESH_CALIBRATE"]["probing"].as<String>();
                   Serial.println(nameStr9);
 
                   if(nameStr9 == "true"){
                       levelling_status = 1;    
-                      display_step = 13;  //更快进入显示  
+                      display_step = 13;  // Faster access to the display  
                       timer_contne = 0;                   
                   }else{
                       levelling_status = 0; 
@@ -1208,7 +1247,7 @@ void loop()
       keyscan_nowtime = millis();
       if (keyscan_nowtime > keyscan_nexttime) {
 
-        if(timer_contne > 0)timer_contne--;  //显示计时
+        if(timer_contne > 0)timer_contne--;  // Display Timing
         
         if((wifi_ap_config_flg == 0)&&(test_mode_flag == 0))
         {
@@ -1405,11 +1444,13 @@ void loop()
       }
   }
 
-  //----------------网络连接检查，AP热点配网------------------//
+  //----------------Network connectivity check, AP hotspot mapping------------------//
   netcheck_nowtime = millis();
   if (netcheck_nowtime > netcheck_nexttime) {
-
-      checkConnect(true);               //检测网络连接状态，参数true表示如果断开重新连接
+      // Debugging RAM Usage
+      // Serial.print("Free Mem : ");
+      // Serial.println(ESP.getFreeHeap());
+      checkConnect(true);                 //检测网络连接状态，参数true表示如果断开重新连接
 
       if (WiFi.status() != WL_CONNECTED) {    //wifi没有连接成功
           checkDNS_HTTP();                  //检测客户端DNS&HTTP请求，也就是检查配网页面那部分

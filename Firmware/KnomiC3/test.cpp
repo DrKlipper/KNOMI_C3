@@ -2,12 +2,13 @@
 #include <Arduino.h>
 #include <lvgl.h>
 #include <WiFi.h>
-// Hardware-specific library
+// #include <TFT_eSPI.h> // Hardware-specific library
 #include <LovyanGFX.h>
 #include "WiFiUser.h"
 #include "lvgl_logo_btt.h"
 #include "lvgl_gif.h"
 #include "test.h"
+
 
 LV_IMG_DECLARE(red_test);
 LV_IMG_DECLARE(green_test);

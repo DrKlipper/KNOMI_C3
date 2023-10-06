@@ -2,10 +2,9 @@
 #include <Arduino.h>
 #include <lvgl.h>
 #include <WiFi.h>
-// Hardware-specific library
+//#include <TFT_eSPI.h> // Hardware-specific library
 #include <LovyanGFX.h>
 #include "WiFiUser.h"
-
 
 LV_IMG_DECLARE(AP_Config);
 LV_IMG_DECLARE(Home);
