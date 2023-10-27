@@ -17,7 +17,7 @@
 #include <iostream>
 #include "lvgl_gui.h"
 #include "lvgl_gif.h"
-#include "test.h"
+//#include "test.h"
 
 
 //全局变量
@@ -61,6 +61,10 @@ Ticker timer1;
 Ticker timer2; 
 
 String actState = "Standby ";
+
+extern uint8_t test_mode_flag;
+extern uint8_t test_key_cnt;
+extern uint32_t test_key_timer_cnt;
 
 #define TFT_WIDTH 240
 #define TFT_HEIGHT 240 
@@ -1005,13 +1009,16 @@ void setup()
       Serial.println("Failed to initialise EEPROM");
     }
     //deletewificonfig();
-    
-    delay(100);
-    readwificonfig(); //将wifi账号读出，判断是否进入配网界面
 
-    if(wificonf.apmodeflag[0] != '8') { //直接进入配网
-        wifi_ap_config_flg = 1;
-    }
+    delay(100);
+  //  readwificonfig(); //将wifi账号读出，判断是否进入配网界面
+
+  //  if(wificonf.apmodeflag[0] != '8') 
+  //  {   //直接进入配网
+  //      wifi_ap_config_flg = 1;
+  //  }
+
+    connectToWiFi(15);
 
     // Serial.printf("SSID:%s\r\n",wificonf.stassid);
     
@@ -1029,16 +1036,22 @@ void setup()
     
     // Don´t show SplashScreen
     screen_begin_dis_flg = 1;
-    
+
     Serial.println("Init LV Display LED");
     lv_display_led_Init();              // Backlighting later.  
 
     timer1.attach(0.001, timer1_cb);    // Timer 0.001s, i.e. 1ms, the callback function is timer1_cb and starts the timer 
     timer2.attach(0.1,   timer2_cb); 
 
-    if(wifi_ap_config_flg == 1){
-      wifiConfig();                     // Commencement of network distribution functions
-    }
+  //  if(wifi_ap_config_flg == 1){
+  //    wifiConfig();                     // Commencement of network distribution functions
+   // }
+
+ /*   while(true) {
+      Serial.print("Free Mem : ");
+      Serial.println(ESP.getFreeHeap());
+      delay(2000);
+    } */
 }     
 
 void loop() 
@@ -1047,7 +1060,7 @@ void loop()
   lv_task_handler();  
   
   //----------------Test mode, search for online networks------------------//
-  if(test_mode_flag==1){
+ /* if(test_mode_flag==1){
 
     screen_begin_dis_flg = 0;
 
@@ -1074,14 +1087,15 @@ void loop()
     }
   }
 
-  if((screen_begin_dis_flg==1)&&(test_mode_flag==0))
+  */
+
+  if((screen_begin_dis_flg==1) && (test_mode_flag==0))
   {
     //-------------HTTP request-----------------------//
     httprequest_nowtime = millis();
     if (httprequest_nowtime > httprequest_nexttime) {
-
       if ((WiFi.status() == WL_CONNECTED) && (KeyDownFlag != KEY_DWON) && (start_http_request_flg == 1)) {    // wifi has been connected successfully, send http request to get data
-
+          //Serial.println("Get Data");
           HTTPClient http; 
           
           wifi_ap_config_flg = 0;         // Verbunden mit Wifi
@@ -1538,17 +1552,18 @@ void loop()
 
   //----------------Network connectivity check, AP hotspot mapping------------------//
   netcheck_nowtime = millis();
-  if (netcheck_nowtime > netcheck_nexttime) {
+  if (netcheck_nowtime > netcheck_nexttime && !wifi_ap_config_flg) {
       // Debugging RAM Usage
-      // Serial.print("Free Mem : ");
-      // Serial.println(ESP.getFreeHeap());
+      Serial.print("Free Mem : ");
+      Serial.println(ESP.getFreeHeap());
+      // Serial.println("Check Connection");
       checkConnect(true);                       // Der Parameter true bedeutet, dass die Verbindung wiederhergestellt wird, wenn die Verbindung getrennt wurde.
 
       if (WiFi.status() != WL_CONNECTED) {      // Die Wifi-Verbindung wurde nicht erfolgreich hergestellt
           checkDNS_HTTP();                      // Erkennung von DNS- und HTTP-Anfragen von Clients, d. h. Überprüfung der Seite, die den Anforderungen entspricht
           First_connection_flg = 0;
         } 
-      netcheck_nexttime = netcheck_nowtime + 100UL;     
+      netcheck_nexttime = netcheck_nowtime + 1000UL; //TBD100UL;     
     } 
 
 }

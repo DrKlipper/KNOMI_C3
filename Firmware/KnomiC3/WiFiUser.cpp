@@ -17,9 +17,9 @@ String scanNetworksID3 = "";
 
 IPAddress apIP(192, 168, 20, 1);            //设置AP的IP地址
  
-String wifi_ssid = "";                     //暂时存储wifi账号密码
-String wifi_pass = "";                     //暂时存储wifi账号密码
-String klipper_ip = "";                     //暂时存储KlipperIP
+String wifi_ssid = "SSID";                     //暂时存储wifi账号密码
+String wifi_pass = "PASSWORD";                     //暂时存储wifi账号密码
+String klipper_ip = "192.168.IP.IP";                     //暂时存储KlipperIP
 
 int connectTimeOut_s = 15;                  //WiFi连接超时时间，单位秒
 const int LED = 2;                          //设置LED引脚
@@ -51,6 +51,10 @@ void handleRoot()
   // } else {
   //   server.send(200, "text/html", ROOT_HTML + scanNetworksID + "</body></html>");   
   // }
+
+  Serial.println("Send Page ...");
+  delay(1000);
+  
   if (server.hasArg("selectSSID")) {
     server.send(200, "text/html", ROOT_HTML);   
   } else {
@@ -153,21 +157,23 @@ void handleNotFound()           // 当浏览器请求的网络资源无法在服
 void initSoftAP() {
   WiFi.mode(WIFI_AP);                                           //配置为AP模式
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));   //设置AP热点IP和子网掩码
+
   if (WiFi.softAP(AP_SSID))                                     //开启AP热点,如需要密码则添加第二个参数
   {                           
     //打印相关信息
-    Serial.println("ESP-32S SoftAP is right.");
-    Serial.print("Soft-AP IP address = ");
+    Serial.println("AP > ESP-32 C3 SoftAP is right.");
+    Serial.print("AP > Soft-AP IP address = ");
     Serial.println(WiFi.softAPIP());                                                //接入点ip
-    Serial.println(String("MAC address = ")  + WiFi.softAPmacAddress().c_str());    //接入点mac
+    Serial.println(String("AP > MAC address = ")  + WiFi.softAPmacAddress().c_str());    //接入点mac
   } 
   else                                                  //开启AP热点失败
   { 
-    Serial.println("WiFiAP Failed");
+    Serial.println("AP > WiFiAP Failed");
     delay(1000);
-    Serial.println("restart now...");
+    Serial.println("AP > restart now...");
     ESP.restart();                                      //重启复位esp32
   }
+
 }
  
 /*
@@ -177,9 +183,9 @@ void initDNS()
 {
   if (dnsServer.start(DNS_PORT, "*", apIP))   //判断将所有地址映射到esp32的ip上是否成功
   {
-    Serial.println("start dnsserver success.");
+    Serial.println("AP > start dnsserver success.");
   } else {
-    Serial.println("start dnsserver failed.");
+    Serial.println("AP > start dnsserver failed.");
   }
 }
  
@@ -190,7 +196,7 @@ void initWebServer()
 {
   if (MDNS.begin("esp32"))      //给设备设定域名esp32,完整的域名是esp32.local
   {
-    Serial.println("MDNS responder started");
+    Serial.println("AP > MDNS responder started");
   }
   //必须添加第二个参数HTTP_GET，以下面这种格式去写，否则无法强制门户
   server.on("/", HTTP_GET, handleRoot);                      //  当浏览器请求服务器根目录(网站首页)时调用自定义函数handleRoot处理，设置主页回调函数，必须添加第二个参数HTTP_GET，否则无法强制门户
@@ -200,7 +206,7 @@ void initWebServer()
  
   server.begin();                                           //启动TCP SERVER
  
-  Serial.println("WebServer started!");
+  Serial.println("AP > WebServer started!");
 }
  
 /*
@@ -303,8 +309,8 @@ void connectToWiFi(int timeOut_s) {
     Serial.println(WiFi.gatewayIP());
 
     Serial.print("WIFI > KlipperIP : ");
-    String str(wificonf.klipperip);
-    klipper_ip = wificonf.klipperip;
+    //String str(wificonf.klipperip);
+    //klipper_ip = wificonf.klipperip;
     Serial.println(klipper_ip);
 
     Serial.print("WIFI > Status    : ");
@@ -322,8 +328,11 @@ void connectToWiFi(int timeOut_s) {
  */
 void wifiConfig() 
 {
+  Serial.println("AP > Init Soft AP");
   initSoftAP();   
+  Serial.println("AP > Init DNS");
   initDNS();        
+  Serial.println("AP > Init Wevbserver");
   initWebServer();  
   // scanWiFi();       
 }
@@ -368,7 +377,7 @@ void savewificonfig()
 //删除原有eeprom中的信息
 void deletewificonfig()
 {
-  config_type deletewifi ={{""},{""},{""},{"5"}};//5 AP模式标志位 ， 8 STA模式
+  config_type deletewifi ={{"NoMamsLand"},{"02991695059929"},{"192.168.30.70"},{"8"}};//5 AP模式标志位 (Default) ， 8 STA模式
   uint8_t *p = (uint8_t*)(&deletewifi);
   for (int i = 0; i < sizeof(deletewifi); i++)
   {
