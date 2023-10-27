@@ -47,6 +47,8 @@ String fanspeed="0";
 uint32_t keyscan_nowtime=0;
 uint32_t keyscan_nexttime=0;
 
+uint32_t debug_nexttime=0;
+
 uint32_t netcheck_nowtime=0;
 uint32_t netcheck_nexttime=0;
 uint32_t sysInfo=0;
@@ -58,11 +60,13 @@ String to_String(int n);
 Ticker timer1; 
 Ticker timer2; 
 
+String actState = "Standby ";
+
 #define TFT_WIDTH 240
 #define TFT_HEIGHT 240 
 
 static lv_disp_draw_buf_t draw_buf;    //定义显示器变量
-static lv_color_t buf[TFT_WIDTH*10]; //定义刷新缓存
+static lv_color_t buf[TFT_WIDTH*10]; //定义refresh缓存
 
 #define TP_INT 0
 #define TP_RST 1
@@ -122,7 +126,7 @@ public:
       cfg.dummy_read_bits = 1;  // Number of virtual read bits before reading data other than pixels
       cfg.readable = false;     // Set to true if you can read the data
       cfg.invert = true;        // Set to true if the panel's light/darkness is inverted
-      cfg.rgb_order = true;     // Set to true if the red and blue colors of the panel are exchanged
+      cfg.rgb_order = false;     // Set to true if the red and blue colors of the panel are exchanged
       cfg.dlen_16bit = false;   // Set to true for panels that send data length in 16-bit units
       cfg.bus_shared = false;   // Set to true if the bus is shared with the SD card (perform bus control using drawJpgFile, etc.)
 
@@ -146,13 +150,13 @@ public:
 // TFT_eSPI tft = TFT_eSPI(240,240);
 LGFX tft;
  
-//打印进度百分比变量定义
+// Printing Progress Percentage Variable Definitions
 int16_t progress_data=0;
-//喷头温度百分比变量定义
+// Nozzle Temperature Percentage Variable Definition
 int16_t ext_per_data=0;
-//热床温度百分比变量定义
+// Hot Bed Temperature Percentage Variable Definition
 int16_t bed_per_data=0;
-//风扇转速百分比变量定义
+// Fan Speed Percentage Variable Definition
 int16_t fanspeed_data=0;
 
 //----------------------------------------//
@@ -185,7 +189,7 @@ String to_String(int n)
   return ss;
  }
 
-//--------------------------------------screen1---初始化----------------------------------------------//
+//--------------------------------------screen1---initialization----------------------------------------------//
 void init_label_print_status()
 {
     label_print_status = lv_label_create(lv_scr_act());
@@ -229,7 +233,7 @@ void init_arc_print_progress()
     lv_obj_center(arc_print_progress);                             //居中显示
 }
 
-//----------------------------------------screen2----初始化------------------------------------------------------//
+//----------------------------------------screen2----initialization------------------------------------------------------//
 void init_label_extruder_actual_temp()
 {
     label_ext_actual_temp = lv_label_create(lv_scr_act()); //创建文字对象
@@ -315,7 +319,7 @@ void init_arc_heaterbed_temp()
     lv_obj_center(arc_heaterbed_temp);                             //居中显示
 }
 
-//----------------------------------------screen3----初始化------------------------------------------------------//
+//----------------------------------------screen3----initialization------------------------------------------------------//
 void init_label_print_file()
 {
     label_print_file = lv_label_create(lv_scr_act()); //创建文字对象
@@ -345,7 +349,7 @@ void init_label_print_file()
     lv_obj_align(label_print_file, LV_ALIGN_CENTER, 0, 0);  
 }
 
-//----------------------------------------screen4----初始化------------------------------------------------------//
+//----------------------------------------screen4----initialization------------------------------------------------------//
 void init_label_ap_config()
 {
   String TEXT = "AP Config...."; 
@@ -360,7 +364,7 @@ void init_label_ap_config()
   lv_obj_align(label_ap_config, LV_ALIGN_CENTER, 0, 0); //居中显示
 }
 
-//----------------------------------------screen5----初始化------------------------------------------------------//
+//----------------------------------------screen5----initialization------------------------------------------------------//
 void init_label_no_klipper()
 {
   String TEXT = "No klipper connect";
@@ -375,7 +379,7 @@ void init_label_no_klipper()
   lv_obj_align(label_no_klipper, LV_ALIGN_CENTER, 0, 0); //居中显示
 }
 
-//----------------------------------------screen6----初始化------------------------------------------------------//
+//----------------------------------------screen6----initialization------------------------------------------------------//
 void init_label_fan_speed()
 {
     String TEXT = to_String(fanspeed_data);
@@ -402,7 +406,7 @@ void init_bar_fan_speed()
 	lv_obj_align(bar_fan_speed, LV_ALIGN_CENTER, 0, 20); //居中显示
 }
 
-//----------------------------------------screen1---刷新-------------------------------------------------------//
+//----------------------------------------screen1---refresh-------------------------------------------------------//
 void update_label_print_status(){
 
 	label_print_status = lv_label_create(lv_scr_act()); //创建文字对象
@@ -449,7 +453,7 @@ void update_arc_print_progress(){
 
 }
 
-//-----------------------------------------------screen2--刷新-----------------------------------------------------//
+//-----------------------------------------------screen2--refresh-----------------------------------------------------//
 void update_label_extruder_actual_temp()
 {
 	label_ext_actual_temp = lv_label_create(lv_scr_act()); //创建文字对象
@@ -523,7 +527,7 @@ void update_arc_heaterbed_temp()
   lv_obj_center(arc_heaterbed_temp);                             //居中显示
 }
 
-//----------------------------------------screen3---刷新-------------------------------------------------------//
+//----------------------------------------screen3---refresh-------------------------------------------------------//
 void update_label_print_file()
 {
 	label_print_file = lv_label_create(lv_scr_act()); //创建文字对象
@@ -536,7 +540,7 @@ void update_label_print_file()
   lv_obj_align(label_print_file, LV_ALIGN_CENTER, 0, 0);  
 }
 
-//----------------------------------------screen4---刷新-------------------------------------------------------//
+//----------------------------------------screen4---refresh-------------------------------------------------------//
 void update_label_ap_config()
 {
   String TEXT = "AP Config...."; 
@@ -548,7 +552,7 @@ void update_label_ap_config()
   lv_obj_align(label_ap_config, LV_ALIGN_CENTER, 0, 0); //居中显示
 }
 
-//----------------------------------------screen5---刷新-------------------------------------------------------//
+//----------------------------------------screen5---refresh-------------------------------------------------------//
 void update_label_no_klipper()
 {
   String TEXT = "No klipper connect";
@@ -560,7 +564,7 @@ void update_label_no_klipper()
   lv_obj_align(label_no_klipper, LV_ALIGN_CENTER, 0, 0); //居中显示
 }
 
-//----------------------------------------screen6---刷新-------------------------------------------------------//
+//----------------------------------------screen6---refresh-------------------------------------------------------//
 void update_label_fan_speed()
 {
   String TEXT = to_String(fanspeed_data);
@@ -897,8 +901,8 @@ void delete_exist_object()
       lv_obj_del(gif_OK);
     }else if(exist_object_screen_flg==15){
 
-      lv_obj_del(img_black_back);
-      lv_obj_del(gif_voron);
+      //lv_obj_del(img_black_back);
+      //lv_obj_del(gif_voron);
     }else if(exist_object_screen_flg==18){
 
       lv_obj_del(img_black_back);
@@ -1020,20 +1024,20 @@ void setup()
     Serial.println("Init Display Object");
     Display_Object_Init();          // Initialize all display objects once
 
-    //Serial.println("Init Open Display");
-    //Open_display_init();
+    Serial.println("Init Open Display");
+    Open_display_init();
     
     // Don´t show SplashScreen
     screen_begin_dis_flg = 1;
     
     Serial.println("Init LV Display LED");
-    lv_display_led_Init();          // Backlighting later.  
+    lv_display_led_Init();              // Backlighting later.  
 
-    timer1.attach(0.001, timer1_cb);  //定时0.001s，即1ms，回调函数为timer1_cb，并启动定时器 
-    timer2.attach(0.1, timer2_cb); 
+    timer1.attach(0.001, timer1_cb);    // Timer 0.001s, i.e. 1ms, the callback function is timer1_cb and starts the timer 
+    timer2.attach(0.1,   timer2_cb); 
 
     if(wifi_ap_config_flg == 1){
-      wifiConfig();                           //开始配网功能
+      wifiConfig();                     // Commencement of network distribution functions
     }
 }     
 
@@ -1080,22 +1084,25 @@ void loop()
 
           HTTPClient http; 
           
-          wifi_ap_config_flg = 0; //已连接上wifi
+          wifi_ap_config_flg = 0;         // Verbunden mit Wifi
 
-          if(First_connection_flg==0){ //连接上wifi 切换回正常显示
+          if(First_connection_flg == 0){  // Verbinden Sie sich mit dem WLAN und schalten Sie zurück zur normalen Anzeige.
+            actState = "Standby ";
             timer_contne = 0;
             display_step = 2; 
             First_connection_flg = 1;  
           }
 
           if(httpswitch==1){
-            http.begin("http://"+klipper_ip+"/api/printer"); //获取温度
+            http.begin("http://"+klipper_ip+"/api/printer");                                            // Ermitteln der Temperatur
           }else if(httpswitch==2){
-            http.begin("http://"+klipper_ip+"/printer/objects/query?display_status"); //获取打印
+            http.begin("http://"+klipper_ip+"/printer/objects/query?display_status");                   // Drucken lassen
           }else if(httpswitch==3){
-            http.begin("http://"+klipper_ip+"/printer/objects/query?gcode_macro%20G28"); //获取home状态
+            //http.begin("http://"+klipper_ip+"/printer/objects/query?gcode_macro%20G28");                // Status der Home abrufen
+            http.begin("http://"+klipper_ip+"/printer/objects/query?gcode_macro%20HomeSetVar");                // Status der Home abrufen
           }else if(httpswitch==4){
-            http.begin("http://"+klipper_ip+"/printer/objects/query?gcode_macro%20BED_MESH_CALIBRATE"); //获取levelling状态
+            //http.begin("http://"+klipper_ip+"/printer/objects/query?gcode_macro%20BED_MESH_CALIBRATE"); // Nivellierungsstatus abrufen
+            http.begin("http://"+klipper_ip+"/printer/objects/query?gcode_macro%20BedLevelVar"); // Nivellierungsstatus abrufen
           }else{
 
           }
@@ -1103,14 +1110,14 @@ void loop()
           int httpCode = http.GET();                                        //Make the request
       
           if (httpCode == 200) { // Check for the returning code  // Fehler > 0
-              Serial.println("HTTP Decode ...");
-              Serial.print  ("HTTP > Code    : ");
-              Serial.println(httpCode);
+              //Serial.println("HTTP Decode ...");
+              //Serial.print  ("HTTP > Code    : ");
+              //Serial.println(httpCode);
               screen_no_klipper_dis_flg = 0;
 
               String payload = http.getString();
-              Serial.println("HTTP > Payload :");
-              Serial.println(payload);
+              //Serial.println("HTTP > Payload :");
+              //Serial.println(payload);
               DynamicJsonDocument doc(payload.length()*2);
               deserializeJson(doc, payload);
 
@@ -1128,16 +1135,6 @@ void loop()
                   tooltemp_actual = (uint16_t)((doc["temperature"]["tool0"]["actual"].as<double>())*100);
                   tooltemp_target = (uint16_t)((doc["temperature"]["tool0"]["target"].as<double>())*100);
 
-                /*  if (nameStr1 != NULL and nameStr1 != 0) { 
-                    Serial.println("Nonsense ... ");
-                    
-                    Serial.println(nameStr1);
-                    Serial.println(nameStr2);
-                    Serial.println(nameStr3);
-                    Serial.println(nameStr4);
-                  }
-                 */
-
                   text_ext_actual_temp = nameStr3+"°C";
                   text_ext_target_temp = nameStr4+"°C";
                   text_bed_actual_temp = nameStr1+"°C";
@@ -1148,27 +1145,44 @@ void loop()
                       print_status = 1;               
                   }else{
                     if(nameStr6 == "true"){
+                      actState = "Paused  ";
                       text_print_status = "paused"; 
                       print_status = 2;      
                     }else{
+                      actState = "Standby ";
                       text_print_status = "standby";
                       print_status = 0;  
                     }
                   }    
 
-                  if(print_status == 0){
-                      if((bedtemp_target > last_bedtemp_target)&&(bedtemp_target != 0)) //启动加热
+                  // Print Status ist Standby
+                  // Logic Change: 
+                  // Wenn der Drucker startet ist er schon im Priting Modus und nicht im Standby !
+                  //if(print_status == 0){
+                  if(print_status == 1){ // || print_status == 0){
+                      // Wechsel von 0 auf x°C beim Bett Target und Bett Target nicht 0 
+                      if((bedtemp_target > last_bedtemp_target) && (bedtemp_target != 0))    // Druckbett vorheizen
                       {
+                          actState = "Heat Bed";
                           timer_contne = 0;
                           display_step = 3;
                       }
 
-                      if((tooltemp_target > last_tooltemp_target)&&(tooltemp_target != 0)) //启动加热
+                      // Wechsel von 0 auf x°C beim Extruder Target und Extruder Target nicht 0 
+                      if((tooltemp_target > last_tooltemp_target)&&(tooltemp_target != 0))  // Extruder vorheizen
                       {
+                          actState = "Heat Ext";
                           timer_contne = 0;
                           display_step = 4;
                       }
+
+                      //if (print_status == 0 && bedtemp_target == 0 && tooltemp_target == 0 && progress_data < 100) {
+                      //  actState = "Standby ";
+                      //  timer_contne = 0;
+                      //  display_step = 2; 
+                      //}
                   }
+
                   last_bedtemp_target = bedtemp_target;
                   last_tooltemp_target = tooltemp_target;
 
@@ -1179,30 +1193,31 @@ void loop()
                   uint16_t datas = (uint16_t)(nameStr7);
                   uint16_t datas1 = datas%10;
 
-                  if(datas1>4){
-                      datas = (datas+10)/10;
+                  if(datas1 > 4){
+                      datas = (datas + 10) / 10;
                   }else{
-                      datas = datas/10;
+                      datas = datas / 10;
                   }
 
                   progress_data = datas;
-                  if(datas==0){
+                  if(datas == 0){
                     nameStrpriting = "0";
                   }else{
                     nameStrpriting = to_String(datas);
+                    actState = "Printing";
                   }
-                  Serial.println(nameStrpriting);
                   
                   httpswitch = 3;
               }else if(httpswitch == 3){   // home state
 
-                  String nameStr8 = doc["result"]["status"]["gcode_macro G28"]["homing"].as<String>();
-                  Serial.println(nameStr8);
+                  //String nameStr8 = doc["result"]["status"]["gcode_macro G28"]["homing"].as<String>();
+                  String nameStr8 = doc["result"]["status"]["gcode_macro HomeSetVar"]["homing"].as<String>();
 
                   if(nameStr8 == "true"){
+                      actState = "Homing  ";
                       homing_status = 1; 
                       display_step = 12;  // Faster access to the display 
-                      timer_contne = 0;         
+                      //timer_contne = 0;         
                   }else{
                       homing_status = 0;  
                   }
@@ -1210,13 +1225,13 @@ void loop()
                   httpswitch = 4;
               }else if(httpswitch == 4){   // levelling status
 
-                  String nameStr9 = doc["result"]["status"]["gcode_macro BED_MESH_CALIBRATE"]["probing"].as<String>();
-                  Serial.println(nameStr9);
+                  String nameStr9 = doc["result"]["status"]["gcode_macro BedLevelVar"]["leveling"].as<String>();
 
                   if(nameStr9 == "true"){
+                      actState = "Leveling";
                       levelling_status = 1;    
                       display_step = 13;  // Faster access to the display  
-                      timer_contne = 0;                   
+                      //timer_contne = 0;                   
                   }else{
                       levelling_status = 0; 
                   }
@@ -1234,6 +1249,7 @@ void loop()
             Serial.println("Error on HTTP request");
 
             if(screen_no_klipper_dis_flg >3){
+              actState = "No Cnect";
               display_step = 8;                             //no klipper connect       
               timer_contne = 0;
             }
@@ -1241,19 +1257,81 @@ void loop()
           http.end(); //Free the resources
         }
 
-        httprequest_nexttime = httprequest_nowtime +97UL;
+        httprequest_nexttime = httprequest_nowtime + 200UL; //97UL;
       }
 
       keyscan_nowtime = millis();
-      if (keyscan_nowtime > keyscan_nexttime) {
 
-        if(timer_contne > 0)timer_contne--;  // Display Timing
+      if (1==1){
+        if (keyscan_nowtime > debug_nexttime) {
+          // Serial output for DEBUGGING
+          Serial.print("M: "); Serial.print(actState);
+          Serial.print(" D: "); if (display_step < 10) {Serial.print(" ");} Serial.print(display_step);
+          Serial.print(" T: "); Serial.print(timer_contne);
+          Serial.print(" %: "); Serial.print(progress_data);
+          Serial.print(" S: "); 
+          switch (print_status) { case 0: Serial.print("Stby"); break;
+                                  case 1: Serial.print("Prnt"); break;
+                                  case 2: Serial.print("Paus"); break; }
+          Serial.print(" H: "); Serial.print(homing_status);
+          Serial.print(" L: "); Serial.print(levelling_status);
+    
+          Serial.print(" | B a : "); Serial.print(bedtemp_actual);
+          Serial.print(" l : "); Serial.print(last_bedtemp_target);
+          Serial.print(" t : "); Serial.print(bedtemp_target);
+          Serial.print(" | E a : "); Serial.print(tooltemp_actual);
+          Serial.print(" l : "); Serial.print(last_tooltemp_target);
+          Serial.print(" t : "); Serial.println(tooltemp_target);
+          debug_nexttime = keyscan_nowtime + 500;
+        }
+      }
+      
+      bool testing = false;
+      if (keyscan_nowtime > keyscan_nexttime && testing){
+          Serial.print("TESTING : "); Serial.println(keyscan_nexttime);
+          delete_exist_object();
+          update_timer = lv_timer_create(update_screen14, 0, NULL);
+          lv_timer_set_repeat_count(update_timer,1);
+
+          // print_status = 0     -> Standby
+          // print_status = 1     -> Printing
+          // print_status = 2     -> Paused
+          
+          // update_screen1  -> Prozentanzeige / Druckanzeige             Print Progress
+          // update_screen2  -> Weißer Bildschirm ???
+          // update_screen3  -> Text in Weiß/Blau "No Printfile"
+          // update_screen4  -> Text in Blau "AP Config..."
+          // update_screen5  -> Text in Blau "No klipper connect"
+          // update_screen6  -> fan Speed: xx% mit Balken
+          // update_screen7  -> Gesicht mit Schlitzaugen                  Standby
+          // update_screen8  -> Blinkendes Rechtes Auge mit Gesicht       Ready to Print
+          // update_screen9  -> Defektes Gesicht mit weißem Balken 
+          // update_screen10 -> Spiralaugen die sich drehen 
+          // update_screen11 -> Tempanzeige (Welche ??)                   Heizbett Temp
+          // update_screen12 -> Nozzel Temp Anzeige                       Extruder Temp
+          // update_screen13 -> Weißer Bildschirm ???
+          // update_screen14 -> Grüner Bogen Links Oben                   Print Complete
+          // update_screen15 -> Voron Logo
+          // update_screen16 -> Weißer Bildschirm ???
+          // update_screen17 -> Weißer Bildschirm ???
+          // update_screen18 -> Gesicht mit großen Augen                  ????
+          // update_screen19 -> Spiralaugen die sich drehen 
+          // update_screen20 -> Hello -> WLAN Verbindung und Konfig       Connect Konfig 
+          // update_screen21 -> Blinkendes Haus -> Homing                 Homing
+          // update_screen22 -> Bed Leveling                              Bed Leveling
+          // update_screen23 -> Knomi has Lost Touch with the Printer     Connect Verloren
+          
+          keyscan_nexttime = keyscan_nowtime + 4000;
+      }
+      
+      if (keyscan_nowtime > keyscan_nexttime && !testing) {
+
+        if(timer_contne > 0) timer_contne--;  // Display Timing
         
-        if((wifi_ap_config_flg == 0)&&(test_mode_flag == 0))
+        if((wifi_ap_config_flg == 0) && (test_mode_flag == 0))
         {
-
-          if((display_step == 2)&&(timer_contne==0)){  //Standby
-            timer_contne = 5;
+          if((display_step == 2)&&(timer_contne==0)){    // Standby
+            timer_contne = 15;  // 5
 
             if(homing_status == 1){
               timer_contne = 5;
@@ -1265,22 +1343,24 @@ void loop()
             else if(print_status == 1){
               timer_contne = 5;
               display_step = 3;
-              standby_voron_dis_flg = 0;
+          //    standby_voron_dis_flg = 0;
             }else{
-                if(standby_voron_dis_flg==0){
+            //    if(standby_voron_dis_flg==0){
 
-                  standby_voron_dis_flg = 1;
+            //      standby_voron_dis_flg = 1;
 
                   delete_exist_object();
-                  update_timer = lv_timer_create(update_screen7, 0, NULL);
+                  //update_timer = lv_timer_create(update_screen14, 0, NULL);         // TEST !
+                  update_timer = lv_timer_create(update_screen7, 0, NULL);  // Standby Augen
                   lv_timer_set_repeat_count(update_timer,1);
-                }else{
-                    display_step = 11;     //to voron
-                }
+           //     }
+                //else{
+                //    display_step = 11;     //to voron
+                //}
             }
           }
 
-          if((display_step == 11)&&(timer_contne==0)){  //voron
+   /*       if((display_step == 11)&&(timer_contne==0)){   // Voron Logo
             timer_contne = 5;
 
             if(homing_status == 1){
@@ -1307,9 +1387,9 @@ void loop()
                 }
             }
           }
-
-          if((display_step == 12)&&(timer_contne==0)){   //homing
-            timer_contne = 5;
+  */
+          if((display_step == 12)&&(timer_contne==0)){   // homing
+            timer_contne = 15; //5
 
             if(homing_status==0){
               display_step = 2;
@@ -1321,8 +1401,8 @@ void loop()
             }
           }
 
-          if((display_step == 13)&&(timer_contne==0)){   //levelling
-            timer_contne = 5;
+          if((display_step == 13)&&(timer_contne==0)){   // levelling
+            timer_contne = 15; //5;
 
             if(levelling_status==0){
               display_step = 2;
@@ -1333,8 +1413,8 @@ void loop()
             }
           }
 
-          if((display_step == 3)&&(timer_contne==0)){
-            timer_contne = 5;
+          if((display_step == 3)&&(timer_contne==0)){    // Bed Heat
+            timer_contne = 15;  // 5
 
             if((bedtemp_actual >= bedtemp_target)&&(bedtemp_target != 0)){
               display_step = 4;
@@ -1344,14 +1424,14 @@ void loop()
                 display_step = 4;
               }else{
                 delete_exist_object();
-                update_timer = lv_timer_create(update_screen11, 0, NULL);   //BED
+                update_timer = lv_timer_create(update_screen11, 0, NULL);   // BED aufheizen
                 lv_timer_set_repeat_count(update_timer,1);
               }
             }
           }
 
-          if((display_step == 4)&&(timer_contne==0)){
-            timer_contne = 5;
+          if((display_step == 4)&&(timer_contne==0)){    // Before Printing // Extruder Heat
+            timer_contne = 15;  // 5
 
             if((tooltemp_actual >= tooltemp_target)&&(tooltemp_target != 0)){
 
@@ -1360,7 +1440,7 @@ void loop()
               }else{
                 display_step = 9;
                 delete_exist_object();
-                update_timer = lv_timer_create(update_screen18, 0, NULL);   //BeforePrinting 
+                update_timer = lv_timer_create(update_screen18, 0, NULL);   // BeforePrinting 
                 lv_timer_set_repeat_count(update_timer,1);  
               }
             
@@ -1371,61 +1451,73 @@ void loop()
                 display_step = 9;
               }else{
                 delete_exist_object();
-                update_timer = lv_timer_create(update_screen12, 0, NULL);   //EXT 
+                update_timer = lv_timer_create(update_screen12, 0, NULL);   // EXT 
                 lv_timer_set_repeat_count(update_timer,1);
               }
 
             }
           }
 
-          if((display_step == 9)&&(timer_contne==0)){
-            timer_contne = 1;
+          if((display_step == 9)&&(timer_contne==0)){    // ???
+            timer_contne = 3; //1;
             display_step = 5;
           }
 
-          if((display_step == 5)&&(timer_contne==0)){
-            timer_contne = 5;
+          if((display_step == 5)&&(timer_contne==0)){    // Printing 
+            timer_contne = 15;  // 5
+
+            if ((print_status == 1 || print_status == 0) && progress_data == 100){
+              display_step = 10; //6;
+              timer_contne = 300;
+              delete_exist_object();
+              update_timer = lv_timer_create(update_screen14, 0, NULL);         // print_ok
+              lv_timer_set_repeat_count(update_timer,1);
+            }
 
             if(print_status == 1){
-                if(progress_data==100){
-                  display_step = 6;
-                  timer_contne = 7;
-                  delete_exist_object();
-                  update_timer = lv_timer_create(update_screen14, 0, NULL);   //print_ok
-                  lv_timer_set_repeat_count(update_timer,1);
-                }else{
-                    
-                    if(progress_data>=1){
+               // if(progress_data == 100){
+               //   display_step = 6;
+               //   timer_contne = 7;
+               //   delete_exist_object();
+               //   update_timer = lv_timer_create(update_screen14, 0, NULL);         // print_ok
+               //   lv_timer_set_repeat_count(update_timer,1);
+               // }else{
+                  if (progress_data < 100) {    
+                    if(progress_data >= 1){
                         delete_exist_object();
-                        update_timer = lv_timer_create(update_screen1, 0, NULL);   //过1%显示进度
+                        update_timer = lv_timer_create(update_screen1, 0, NULL);    // Fortschritte jenseits der 1-Prozent-Marke
                         lv_timer_set_repeat_count(update_timer,1);
                     }else{
                         delete_exist_object();
-                        update_timer = lv_timer_create(update_screen9, 0, NULL);   //printing
+                        update_timer = lv_timer_create(update_screen9, 0, NULL);    // printing
                         lv_timer_set_repeat_count(update_timer,1);                      
                     }
                 }
-            }else{
-                display_step = 2;
             }
+            // TBD ... Rücksprung nach Standby nach x Sekunden
+            //else{
+            //    display_step = 2;
+            //}
 
           }
 
-          if((display_step == 6)&&(timer_contne==0)){
-            timer_contne = 5;
-            display_step = 10;
+         // TBD raus ... Drehende Augen
+         //  
+         //  if((display_step == 6)&&(timer_contne==0)){    // AfterPrinting
+         //  timer_contne = 5;
+         //   display_step = 10;
+//
+         //   delete_exist_object();
+         //   update_timer = lv_timer_create(update_screen19, 0, NULL);   
+         //   lv_timer_set_repeat_count(update_timer,1);
+         // }
 
-            delete_exist_object();
-            update_timer = lv_timer_create(update_screen19, 0, NULL);   //AfterPrinting
-            lv_timer_set_repeat_count(update_timer,1);
-          }
-
-          if((display_step == 10)&&(timer_contne==0)){
-            timer_contne = 5;
+          if((display_step == 10)&&(timer_contne==0)){   // Standby ???
+            timer_contne = 15;  // 5
             display_step = 2;
           }
 
-          if((display_step == 8)&&(timer_contne==0)){   //no klipper connect
+          if((display_step == 8)&&(timer_contne==0)){    // no klipper connect
             timer_contne = 2;
 
             if(screen_no_klipper_dis_flg==0){
@@ -1436,11 +1528,11 @@ void loop()
               lv_timer_set_repeat_count(update_timer,1);
             }
           }
-
+      
         }
 
-        start_http_request_flg = 1;  //连接上wifi后 ， 启动http请求
-        keyscan_nexttime = keyscan_nowtime + 400;
+        start_http_request_flg = 1;             // Nach der Verbindung mit dem WLAN starten Sie die http-Anfrage.
+        keyscan_nexttime = keyscan_nowtime + 400;                                               
       }
   }
 
@@ -1450,10 +1542,10 @@ void loop()
       // Debugging RAM Usage
       // Serial.print("Free Mem : ");
       // Serial.println(ESP.getFreeHeap());
-      checkConnect(true);                 //检测网络连接状态，参数true表示如果断开重新连接
+      checkConnect(true);                       // Der Parameter true bedeutet, dass die Verbindung wiederhergestellt wird, wenn die Verbindung getrennt wurde.
 
-      if (WiFi.status() != WL_CONNECTED) {    //wifi没有连接成功
-          checkDNS_HTTP();                  //检测客户端DNS&HTTP请求，也就是检查配网页面那部分
+      if (WiFi.status() != WL_CONNECTED) {      // Die Wifi-Verbindung wurde nicht erfolgreich hergestellt
+          checkDNS_HTTP();                      // Erkennung von DNS- und HTTP-Anfragen von Clients, d. h. Überprüfung der Seite, die den Anforderungen entspricht
           First_connection_flg = 0;
         } 
       netcheck_nexttime = netcheck_nowtime + 100UL;     

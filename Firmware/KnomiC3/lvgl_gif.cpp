@@ -55,7 +55,7 @@ lv_obj_t * gif_bed_temp;
 lv_obj_t * gif_ext_temp; 
 
 lv_obj_t * gif_OK; 
-lv_obj_t * gif_voron; 
+//lv_obj_t * gif_voron; 
 
 //-----------------------------------------白色背景图片对象定义-------------------------------------------//
 void init_gif_White_back_display()
@@ -194,12 +194,12 @@ void init_gif_OK_display()
   lv_obj_align(gif_OK,LV_ALIGN_CENTER,0,0);
 }
 
-void init_gif_voron_display()
-{
-  gif_voron = lv_gif_create(lv_scr_act());
-  lv_gif_set_src(gif_voron, &Voron);
-  lv_obj_align(gif_voron,LV_ALIGN_CENTER,0,0);
-}
+//void init_gif_voron_display()
+//{
+//  gif_voron = lv_gif_create(lv_scr_act());
+//  lv_gif_set_src(gif_voron, &Voron);
+//  lv_obj_align(gif_voron,LV_ALIGN_CENTER,0,0);
+//}
 
 //----------------------------------------图片显示---刷新-------------------------------------------------------//
 void update_gif_Standby_display()
@@ -294,9 +294,9 @@ void update_gif_OK_display()
   lv_obj_align(gif_OK,LV_ALIGN_CENTER,0,0);
 }
 
-void update_gif_voron_display()
-{
-  gif_voron = lv_gif_create(lv_scr_act());
-  lv_gif_set_src(gif_voron, &Voron);
-  lv_obj_align(gif_voron,LV_ALIGN_CENTER,0,0);
-}
+//void update_gif_voron_display()
+//{
+//  gif_voron = lv_gif_create(lv_scr_act());
+//  lv_gif_set_src(gif_voron, &Voron);
+//  lv_obj_align(gif_voron,LV_ALIGN_CENTER,0,0);
+//}
