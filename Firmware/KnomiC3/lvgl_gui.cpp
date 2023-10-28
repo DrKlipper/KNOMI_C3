@@ -7,7 +7,6 @@
 #include "WiFiUser.h"
 #include "lvgl_logo_btt.h"
 #include "lvgl_gif.h"
-#include "test.h"
 
 //显示刷新定时器
 lv_timer_t * update_timer=NULL;
@@ -142,7 +141,7 @@ void open_task_suc(lv_timer_t * timer){
 
 //初始化失败  重启
 void open_task_err(lv_timer_t * timer){
-    //  ESP.restart();
+    ESP.restart();
 
     timer_project_init=lv_timer_create(project_task_init, 100, NULL);
     lv_timer_set_repeat_count(timer_project_init,1);
@@ -164,20 +163,15 @@ void open_task_1(lv_timer_t * timer){
 }
 
 void open_task_conv(lv_timer_t * timer){
-
-    //连接wifi
+    // Connect to Wifi
     connectToWiFi(connectTimeOut_s);     //连接wifi，传入的是wifi连接等待时间15s    
 
-    if(test_mode_flag == 0){
+    init_img_open_logo_display();
 
-        init_img_open_logo_display();
+    Open_up_animation();
 
-        Open_up_animation();
-
-        timer_open=lv_timer_create(open_task_1, 100, NULL);
-        lv_timer_set_repeat_count(timer_open,1); 
-
-    }
+    timer_open=lv_timer_create(open_task_1, 100, NULL);
+    lv_timer_set_repeat_count(timer_open,1); 
 }
 
 void Test(){
@@ -186,16 +180,7 @@ void Test(){
 }
 
 void Open_display_init(){
-    if(test_mode_flag == 1){
-
-    }else if(wifi_ap_config_flg == 1){
-        update_gif_AP_Config_back_display();
-        update_gif_AP_Config_display();
-        exist_object_screen_flg = 20;
-        screen_begin_dis_flg = 1;
-    }else{
-    	init_img_open_logo_display();
-		timer_open_init=lv_timer_create(open_task_conv, 100, NULL);
-  		lv_timer_set_repeat_count(timer_open_init,1);
-    }
+  init_img_open_logo_display();
+	timer_open_init=lv_timer_create(open_task_conv, 100, NULL);
+  lv_timer_set_repeat_count(timer_open_init,1);
 } 

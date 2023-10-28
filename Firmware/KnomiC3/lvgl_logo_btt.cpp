@@ -3,7 +3,7 @@
 #include <lvgl.h>
 #include <WiFi.h>
 #include <LovyanGFX.h>
-#include "WiFiUser.h"
+//#include "WiFiUser.h"
 
 LV_IMG_DECLARE(BTT_LOGO);
 

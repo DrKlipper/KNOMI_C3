@@ -5,8 +5,6 @@
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
 #include "WiFiUser.h"
-#include <EEPROM.h>
-#include "key.h"
 #include <Ticker.h>
 #include <lvgl.h>
 #include <LovyanGFX.h>
@@ -17,21 +15,22 @@
 #include <iostream>
 #include "lvgl_gui.h"
 #include "lvgl_gif.h"
-//#include "test.h"
 
-
-//全局变量
+// global variable
 const char * statedata;
 
-uint16_t bedtemp_actual = 0;
-uint16_t bedtemp_target = 0;
-uint16_t last_bedtemp_target = 0;
-uint16_t tooltemp_actual = 0;
-uint16_t tooltemp_target = 0;
+uint16_t bedtemp_actual       = 0;
+uint16_t bedtemp_target       = 0;
+uint16_t last_bedtemp_target  = 0;
+uint16_t tooltemp_actual      = 0;
+uint16_t tooltemp_target      = 0;
 uint16_t last_tooltemp_target = 0;
+uint16_t last_progress        = 0;    // Letzten % Wert merken um das Ende sauber zu erkennen
+bool     last_heating_Standby = false;    // Extra Variable um das Heizen immer anzeigen zu können
 
-String text_print_status = "standby"; //打印状态
-String text_print_file_name = "No Printfile";  //打印文件名
+String text_print_status      = "standby";        // print state
+String text_print_file_name   = "No Printfile";   // Print file name
+String actState               = "Standby ";
 
 String text_ext_actual_temp = " °C";
 String text_ext_target_temp = " °C";
@@ -58,19 +57,13 @@ uint32_t httprequest_nexttime=0;
 
 String to_String(int n);
 Ticker timer1; 
-Ticker timer2; 
-
-String actState = "Standby ";
-
-extern uint8_t test_mode_flag;
-extern uint8_t test_key_cnt;
-extern uint32_t test_key_timer_cnt;
+//Ticker timer2; 
 
 #define TFT_WIDTH 240
 #define TFT_HEIGHT 240 
 
-static lv_disp_draw_buf_t draw_buf;    //定义显示器变量
-static lv_color_t buf[TFT_WIDTH*10]; //定义refresh缓存
+static lv_disp_draw_buf_t draw_buf;   // Defining Display Variables
+static lv_color_t buf[TFT_WIDTH*10];  // Defining the refresh cache
 
 #define TP_INT 0
 #define TP_RST 1
@@ -829,17 +822,17 @@ void lv_display_Init()
 void timer1_cb() 
 {
     lv_tick_inc(1);/* le the GUI do its work */ 
-    KeyScan();
+//    KeyScan();
 }
 
-void timer2_cb() // Short press to clear the timer
-{
-    test_key_timer_cnt++;
-    if(test_key_timer_cnt>10){
-      test_key_timer_cnt = 0;
-      test_key_cnt = 0;
-    }
-}
+//void timer2_cb() // Short press to clear the timer
+//{
+//    test_key_timer_cnt++;
+//    if(test_key_timer_cnt>10){
+//      test_key_timer_cnt = 0;
+//      test_key_cnt = 0;
+//    }
+//}
 
 void delete_exist_object()
 {
@@ -987,7 +980,7 @@ void Display_Object_Init()
 
 void setup()
 {
-    Serial.begin(115200);           //波特率
+    Serial.begin(115200);           // Set Serial to 115200 Baud
     // Erstmal etwas warten um ggf. den seriellen Port überhaupt erwischen zu können ... 
     delay(5000);
 
@@ -1004,26 +997,10 @@ void setup()
     Serial.println("/_______  /__| /\\  |____|__ \\____/__|   __/|   __/ \\___  >__|    "); 
     Serial.println("        \\/     \\/          \\/       |__|   |__|        \\/        ");
 
-    // 1024 hat Probleme gemacht ? 
-    if (!EEPROM.begin(1000)) {
-      Serial.println("Failed to initialise EEPROM");
-    }
-    //deletewificonfig();
-
     delay(100);
-  //  readwificonfig(); //将wifi账号读出，判断是否进入配网界面
-
-  //  if(wificonf.apmodeflag[0] != '8') 
-  //  {   //直接进入配网
-  //      wifi_ap_config_flg = 1;
-  //  }
-
-    connectToWiFi(15);
-
-    // Serial.printf("SSID:%s\r\n",wificonf.stassid);
     
-    Serial.println("Init Key interface");
-    InitKeyInterface();             // Keypad Interface Initialization
+//    Serial.println("Init Key interface");
+//    InitKeyInterface();             // Keypad Interface Initialization
     
     Serial.println("Init lv Display");
     lv_display_Init();              // Display initialization
@@ -1032,7 +1009,7 @@ void setup()
     Display_Object_Init();          // Initialize all display objects once
 
     Serial.println("Init Open Display");
-    Open_display_init();
+    Open_display_init();            // Calls connectToWiFi(30) !
     
     // Don´t show SplashScreen
     screen_begin_dis_flg = 1;
@@ -1041,17 +1018,6 @@ void setup()
     lv_display_led_Init();              // Backlighting later.  
 
     timer1.attach(0.001, timer1_cb);    // Timer 0.001s, i.e. 1ms, the callback function is timer1_cb and starts the timer 
-    timer2.attach(0.1,   timer2_cb); 
-
-  //  if(wifi_ap_config_flg == 1){
-  //    wifiConfig();                     // Commencement of network distribution functions
-   // }
-
- /*   while(true) {
-      Serial.print("Free Mem : ");
-      Serial.println(ESP.getFreeHeap());
-      delay(2000);
-    } */
 }     
 
 void loop() 
@@ -1059,42 +1025,12 @@ void loop()
   // lv_tick_inc(1);/* le the GUI do its work */ 
   lv_task_handler();  
   
-  //----------------Test mode, search for online networks------------------//
- /* if(test_mode_flag==1){
-
-    screen_begin_dis_flg = 0;
-
-    delay(100);
-    update_blue_back_display();
-    lv_task_handler(); 
-    delay(4000);
-    lv_obj_del(img_blue_test);
-
-    delay(100);
-    init_gif_White_back_display();
-    update_label_scan_networks_test();
-    lv_task_handler(); 
-    delay(100);
-
-    wifiConfig_test();
-    delay(100);
-
-    update_label_networksID_test();
-
-    while(1){
-      lv_task_handler();  
-      delay(10);
-    }
-  }
-
-  */
-
-  if((screen_begin_dis_flg==1) && (test_mode_flag==0))
+  if(screen_begin_dis_flg==1)
   {
     //-------------HTTP request-----------------------//
     httprequest_nowtime = millis();
     if (httprequest_nowtime > httprequest_nexttime) {
-      if ((WiFi.status() == WL_CONNECTED) && (KeyDownFlag != KEY_DWON) && (start_http_request_flg == 1)) {    // wifi has been connected successfully, send http request to get data
+      if ((WiFi.status() == WL_CONNECTED) && (start_http_request_flg == 1)) {    // wifi has been connected successfully, send http request to get data
           //Serial.println("Get Data");
           HTTPClient http; 
           
@@ -1172,14 +1108,15 @@ void loop()
                   // Print Status ist Standby
                   // Logic Change: 
                   // Wenn der Drucker startet ist er schon im Priting Modus und nicht im Standby !
-                  //if(print_status == 0){
-                  if(print_status == 1){ // || print_status == 0){
+                  if(print_status == 1 || print_status == 0){
                       // Wechsel von 0 auf x°C beim Bett Target und Bett Target nicht 0 
                       if((bedtemp_target > last_bedtemp_target) && (bedtemp_target != 0))    // Druckbett vorheizen
                       {
                           actState = "Heat Bed";
                           timer_contne = 0;
                           display_step = 3;
+
+                          last_heating_Standby = (print_status == 0); 
                       }
 
                       // Wechsel von 0 auf x°C beim Extruder Target und Extruder Target nicht 0 
@@ -1188,13 +1125,16 @@ void loop()
                           actState = "Heat Ext";
                           timer_contne = 0;
                           display_step = 4;
+                          last_heating_Standby = (print_status == 0); 
                       }
 
-                      //if (print_status == 0 && bedtemp_target == 0 && tooltemp_target == 0 && progress_data < 100) {
-                      //  actState = "Standby ";
-                      //  timer_contne = 0;
-                      //  display_step = 2; 
-                      //}
+                      if (last_heating_Standby && bedtemp_target == 0 && tooltemp_target == 0) {
+                        Serial.println("----> RESET HEATING !!");
+                        actState = "Standby ";
+                        timer_contne = 0;
+                        display_step = 2; 
+                        last_heating_Standby = false;
+                      }
                   }
 
                   last_bedtemp_target = bedtemp_target;
@@ -1218,7 +1158,6 @@ void loop()
                     nameStrpriting = "0";
                   }else{
                     nameStrpriting = to_String(datas);
-                    actState = "Printing";
                   }
                   
                   httpswitch = 3;
@@ -1271,17 +1210,17 @@ void loop()
           http.end(); //Free the resources
         }
 
-        httprequest_nexttime = httprequest_nowtime + 200UL; //97UL;
+        httprequest_nexttime = httprequest_nowtime + 97UL;
       }
 
       keyscan_nowtime = millis();
 
       if (1==1){
-        if (keyscan_nowtime > debug_nexttime) {
+        if (keyscan_nowtime > debug_nexttime && WiFi.status() == WL_CONNECTED) {
           // Serial output for DEBUGGING
           Serial.print("M: "); Serial.print(actState);
           Serial.print(" D: "); if (display_step < 10) {Serial.print(" ");} Serial.print(display_step);
-          Serial.print(" T: "); Serial.print(timer_contne);
+          Serial.print(" T: "); if (timer_contne < 10) {Serial.print(" ");} Serial.print(timer_contne);
           Serial.print(" %: "); Serial.print(progress_data);
           Serial.print(" S: "); 
           switch (print_status) { case 0: Serial.print("Stby"); break;
@@ -1295,7 +1234,8 @@ void loop()
           Serial.print(" t : "); Serial.print(bedtemp_target);
           Serial.print(" | E a : "); Serial.print(tooltemp_actual);
           Serial.print(" l : "); Serial.print(last_tooltemp_target);
-          Serial.print(" t : "); Serial.println(tooltemp_target);
+          Serial.print(" t : "); Serial.print(tooltemp_target);
+          Serial.print(" | M : "); Serial.println(ESP.getFreeHeap());
           debug_nexttime = keyscan_nowtime + 500;
         }
       }
@@ -1342,10 +1282,10 @@ void loop()
 
         if(timer_contne > 0) timer_contne--;  // Display Timing
         
-        if((wifi_ap_config_flg == 0) && (test_mode_flag == 0))
+        if(wifi_ap_config_flg == 0)
         {
           if((display_step == 2)&&(timer_contne==0)){    // Standby
-            timer_contne = 15;  // 5
+            timer_contne = 10;  // 5
 
             if(homing_status == 1){
               timer_contne = 5;
@@ -1402,8 +1342,9 @@ void loop()
             }
           }
   */
+  
           if((display_step == 12)&&(timer_contne==0)){   // homing
-            timer_contne = 15; //5
+            timer_contne = 10; //5
 
             if(homing_status==0){
               display_step = 2;
@@ -1416,7 +1357,7 @@ void loop()
           }
 
           if((display_step == 13)&&(timer_contne==0)){   // levelling
-            timer_contne = 15; //5;
+            timer_contne = 10; //5;
 
             if(levelling_status==0){
               display_step = 2;
@@ -1428,7 +1369,7 @@ void loop()
           }
 
           if((display_step == 3)&&(timer_contne==0)){    // Bed Heat
-            timer_contne = 15;  // 5
+            timer_contne = 10;  // 5
 
             if((bedtemp_actual >= bedtemp_target)&&(bedtemp_target != 0)){
               display_step = 4;
@@ -1445,7 +1386,7 @@ void loop()
           }
 
           if((display_step == 4)&&(timer_contne==0)){    // Before Printing // Extruder Heat
-            timer_contne = 15;  // 5
+            timer_contne = 10;  // 5
 
             if((tooltemp_actual >= tooltemp_target)&&(tooltemp_target != 0)){
 
@@ -1473,46 +1414,39 @@ void loop()
           }
 
           if((display_step == 9)&&(timer_contne==0)){    // ???
-            timer_contne = 3; //1;
+            timer_contne = 1;
             display_step = 5;
           }
 
           if((display_step == 5)&&(timer_contne==0)){    // Printing 
-            timer_contne = 15;  // 5
+            timer_contne = 10;  // 5
 
-            if ((print_status == 1 || print_status == 0) && progress_data == 100){
+            if (last_progress > 95 && progress_data == 100 && print_status == 0){
               display_step = 10; //6;
               timer_contne = 300;
               delete_exist_object();
               update_timer = lv_timer_create(update_screen14, 0, NULL);         // print_ok
               lv_timer_set_repeat_count(update_timer,1);
+              // Nur 1x Ende anzeigen und fertig
+              last_progress = 0;
             }
 
             if(print_status == 1){
-               // if(progress_data == 100){
-               //   display_step = 6;
-               //   timer_contne = 7;
-               //   delete_exist_object();
-               //   update_timer = lv_timer_create(update_screen14, 0, NULL);         // print_ok
-               //   lv_timer_set_repeat_count(update_timer,1);
-               // }else{
-                  if (progress_data < 100) {    
-                    if(progress_data >= 1){
-                        delete_exist_object();
-                        update_timer = lv_timer_create(update_screen1, 0, NULL);    // Fortschritte jenseits der 1-Prozent-Marke
-                        lv_timer_set_repeat_count(update_timer,1);
-                    }else{
-                        delete_exist_object();
-                        update_timer = lv_timer_create(update_screen9, 0, NULL);    // printing
-                        lv_timer_set_repeat_count(update_timer,1);                      
-                    }
+              if (progress_data < 100) {    
+                if(progress_data >= 1){
+                    delete_exist_object();
+                    update_timer = lv_timer_create(update_screen1, 0, NULL);    // Fortschritte jenseits der 1-Prozent-Marke
+                    lv_timer_set_repeat_count(update_timer,1);
+                }else{
+                    delete_exist_object();
+                    update_timer = lv_timer_create(update_screen9, 0, NULL);    // printing
+                    lv_timer_set_repeat_count(update_timer,1);                      
                 }
+                
+                //Serial.print(last_progress); Serial.print(" -> "); Serial.println(progress_data);
+                last_progress = progress_data;
+              }
             }
-            // TBD ... Rücksprung nach Standby nach x Sekunden
-            //else{
-            //    display_step = 2;
-            //}
-
           }
 
          // TBD raus ... Drehende Augen
@@ -1527,7 +1461,7 @@ void loop()
          // }
 
           if((display_step == 10)&&(timer_contne==0)){   // Standby ???
-            timer_contne = 15;  // 5
+            timer_contne = 10;  // 5
             display_step = 2;
           }
 
@@ -1552,15 +1486,15 @@ void loop()
 
   //----------------Network connectivity check, AP hotspot mapping------------------//
   netcheck_nowtime = millis();
-  if (netcheck_nowtime > netcheck_nexttime && !wifi_ap_config_flg) {
+  if (netcheck_nowtime > netcheck_nexttime) {
       // Debugging RAM Usage
-      Serial.print("Free Mem : ");
-      Serial.println(ESP.getFreeHeap());
+      // Serial.print("Free Mem : ");
+      // Serial.println(ESP.getFreeHeap());
       // Serial.println("Check Connection");
       checkConnect(true);                       // Der Parameter true bedeutet, dass die Verbindung wiederhergestellt wird, wenn die Verbindung getrennt wurde.
 
       if (WiFi.status() != WL_CONNECTED) {      // Die Wifi-Verbindung wurde nicht erfolgreich hergestellt
-          checkDNS_HTTP();                      // Erkennung von DNS- und HTTP-Anfragen von Clients, d. h. Überprüfung der Seite, die den Anforderungen entspricht
+          //checkDNS_HTTP();                      // Erkennung von DNS- und HTTP-Anfragen von Clients, d. h. Überprüfung der Seite, die den Anforderungen entspricht
           First_connection_flg = 0;
         } 
       netcheck_nexttime = netcheck_nowtime + 1000UL; //TBD100UL;     
